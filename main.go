@@ -7,21 +7,22 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Alkemic/linekrd-identity-cert-manager/csr"
-	"github.com/Alkemic/linekrd-identity-cert-manager/grpc"
-
-	"github.com/Alkemic/linekrd-identity-cert-manager/config"
-
 	cmversioned "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-
 	idctl "github.com/linkerd/linkerd2/controller/identity"
 	"github.com/linkerd/linkerd2/pkg/admin"
 	"github.com/linkerd/linkerd2/pkg/k8s"
 	"github.com/linkerd/linkerd2/pkg/prometheus"
 	"github.com/linkerd/linkerd2/pkg/trace"
+	"github.com/rs/zerolog"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/record"
+
+	"github.com/Alkemic/linekrd-identity-cert-manager/config"
+	"github.com/Alkemic/linekrd-identity-cert-manager/csr"
+	"github.com/Alkemic/linekrd-identity-cert-manager/grpc"
 )
 
 const componentName = "linkerd-identity"
@@ -87,9 +88,26 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to build cert-manager client")
 	}
 
+	// Create K8s event recorder
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{
+		Interface: k8sAPI.CoreV1().Events(""),
+	})
+	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: componentName})
+	recordEventFunc := func(parent runtime.Object, eventType, reason, message string) {
+		if parent == nil {
+			parent = &corev1.ObjectReference{
+				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Namespace:  cfg.ControllerNS,
+				Name:       componentName,
+			}
+		}
+		recorder.Event(parent, eventType, reason, message)
+	}
+
 	csrSvc := csr.New(log, cfg.ControllerNS, cmCli, cfg.PreserveCrtReq, cfg.IssuerRef())
-	// Create, initialize and run service
-	svc := grpc.New(log, k8sTokenValidator, csrSvc)
+	svc := grpc.New(log, k8sTokenValidator, recordEventFunc, csrSvc)
 
 	// Bind and serve
 	lis, err := net.Listen("tcp", cfg.Addr)

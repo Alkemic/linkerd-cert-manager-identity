@@ -1,6 +1,8 @@
 package csr
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/pem"
 	"time"
 
@@ -51,4 +53,11 @@ func (r Response) ToPBCertifyResponse() *pb.CertifyResponse {
 		IntermediateCertificates: r.Intermediate,
 		ValidUntil:               r.NotAfter,
 	}
+}
+
+func (r Response) CertificateHash() string {
+	hasher := sha256.New()
+	hasher.Write(r.Certificate)
+	hash := hex.EncodeToString(hasher.Sum(nil))
+	return hash
 }

@@ -5,14 +5,23 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"strings"
 
 	pb "github.com/linkerd/linkerd2-proxy-api/go/identity"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/Alkemic/linekrd-identity-cert-manager/csr"
+)
+
+const (
+	eventTypeIssuedLeafCert       = "IssuedLeafCertificate"
+	eventTypeIssuedLeafCertFailed = "IssuedLeafCertificateFailed"
 )
 
 type (
@@ -23,9 +32,10 @@ type (
 	// Service implements the gRPC service in terms of a Validator and Issuer.
 	Service struct {
 		pb.UnimplementedIdentityServer
-		validator  Validator
-		log        zerolog.Logger
-		csrService csrService
+		validator   Validator
+		log         zerolog.Logger
+		recordEvent func(parent runtime.Object, eventType, reason, message string)
+		csrService  csrService
 	}
 
 	// Validator implementors accept a bearer token, validates it, and returns a
@@ -52,12 +62,14 @@ type (
 )
 
 // New creates a new identity service.
-func New(log zerolog.Logger, validator Validator, csrService csrService) *Service {
+func New(log zerolog.Logger, validator Validator, recordEvent func(parent runtime.Object, eventType, reason, message string), csrService csrService) *Service {
 	return &Service{
 		UnimplementedIdentityServer: pb.UnimplementedIdentityServer{},
-		log:                         log,
-		validator:                   validator,
-		csrService:                  csrService,
+
+		log:         log,
+		validator:   validator,
+		recordEvent: recordEvent,
+		csrService:  csrService,
 	}
 }
 
@@ -108,10 +120,21 @@ func (svc *Service) Certify(ctx context.Context, req *pb.CertifyRequest) (*pb.Ce
 		CSR:      req.GetCertificateSigningRequest(),
 		Identity: req.GetIdentity(),
 	})
-	if err != nil {
-		log.Error().Err(err).Msg("failed to sign csr request")
-		return nil, fmt.Errorf("signing csr request: %w", err)
+
+	identitySegments := strings.Split(tokIdentity, ".")
+	sa := v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{Name: identitySegments[0], Namespace: identitySegments[1]},
 	}
+
+	if err != nil {
+		err := fmt.Errorf("signing csr request: %w", err)
+		svc.recordEvent(&sa, v1.EventTypeNormal, eventTypeIssuedLeafCertFailed, err.Error())
+		log.Error().Err(err).Msg("failed to sign csr request")
+		return nil, err
+	}
+
+	msg := fmt.Sprintf("issued certificate for %s until %s: %s", tokIdentity, resp.NotAfter, resp.CertificateHash())
+	svc.recordEvent(&sa, v1.EventTypeNormal, eventTypeIssuedLeafCert, msg)
 
 	return resp.ToPBCertifyResponse(), nil
 }

@@ -20,11 +20,6 @@ import (
 )
 
 const (
-	eventTypeSkipped        = "IssuerUpdateSkipped"
-	eventTypeUpdated        = "IssuerUpdated"
-	eventTypeFailed         = "IssuerValidationFailed"
-	eventTypeIssuedLeafCert = "IssuedLeafCertificate"
-
 	identityAnnotation = "linkerd.cert-manager.io/identities"
 )
 
