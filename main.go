@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/Alkemic/linekrd-identity-cert-manager/csr"
+	"github.com/Alkemic/linekrd-identity-cert-manager/grpc"
 
 	"github.com/Alkemic/linekrd-identity-cert-manager/config"
 
@@ -21,8 +22,6 @@ import (
 	"github.com/linkerd/linkerd2/pkg/k8s"
 	"github.com/linkerd/linkerd2/pkg/prometheus"
 	"github.com/linkerd/linkerd2/pkg/trace"
-
-	"github.com/Alkemic/linekrd-identity-cert-manager/identity"
 )
 
 const componentName = "linkerd-identity"
@@ -90,7 +89,7 @@ func main() {
 
 	csrSvc := csr.New(log, cfg.ControllerNS, cmCli, cfg.PreserveCrtReq, cfg.IssuerRef())
 	// Create, initialize and run service
-	svc := identity.New(log, k8sTokenValidator, csrSvc)
+	svc := grpc.New(log, k8sTokenValidator, csrSvc)
 
 	// Bind and serve
 	lis, err := net.Listen("tcp", cfg.Addr)
@@ -105,7 +104,7 @@ func main() {
 		}
 	}
 	srv := prometheus.NewGrpcServer()
-	identity.Register(srv, svc)
+	grpc.Register(srv, svc)
 	go func() {
 		log.Info().Err(err).Str("addr", cfg.Addr).Msg("starting gRPC server")
 		if err := srv.Serve(lis); err != nil {

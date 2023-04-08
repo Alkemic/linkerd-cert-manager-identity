@@ -1,10 +1,11 @@
-package identity
+package grpc
 
 import (
 	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
+
 	pb "github.com/linkerd/linkerd2-proxy-api/go/identity"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
