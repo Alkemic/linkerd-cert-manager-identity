@@ -6,7 +6,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
+
+	"github.com/Alkemic/linekrd-identity-cert-manager/csr"
 
 	"github.com/Alkemic/linekrd-identity-cert-manager/config"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/linkerd/linkerd2/pkg/admin"
 	"github.com/linkerd/linkerd2/pkg/k8s"
 	"github.com/linkerd/linkerd2/pkg/prometheus"
-	"github.com/linkerd/linkerd2/pkg/tls"
 	"github.com/linkerd/linkerd2/pkg/trace"
 
 	"github.com/Alkemic/linekrd-identity-cert-manager/identity"
@@ -40,7 +40,7 @@ func main() {
 	//identityClockSkewAllowance := cmd.String("identity-clock-skew-allowance", "", "the amount of time to allow for clock skew within a Linkerd cluster")
 	//enablePprof := cmd.Bool("enable-pprof", false, "Enable pprof endpoints on the admin server")
 	//
-	//preserveCrtReq := cmd.Bool("preserve-certificate-requests", false, "Do not remove CertificateRequests after certificate is created")
+	//preserveCrtReq := cmd.Bool("preserve-csr-requests", false, "Do not remove CertificateRequests after csr is created")
 	//issuerName := cmd.String("issuer-name", "linkerd", "name of issuer")
 	//issuerKind := cmd.String("issuer-kind", "Issuer", "issuer kind, can be Issuer or ClusterIssuer")
 	//
@@ -67,32 +67,10 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	//log.Info().Str(*controllerNS, *trustDomain).Send()
 	dom, err := idctl.NewTrustDomain(cfg.ControllerNS, cfg.TrustDomain)
 	if err != nil {
 		//nolint:gocritic
 		log.Fatal().Err(err).Msg("Invalid trust domain")
-	}
-
-	validity := tls.Validity{
-		ClockSkewAllowance: tls.DefaultClockSkewAllowance,
-		Lifetime:           identity.DefaultIssuanceLifetime,
-	}
-	if pbd := cfg.IdentityClockSkewAllowance; pbd != "" {
-		csa, err := time.ParseDuration(pbd)
-		if err != nil {
-			log.Warn().Err(err).Msg("Invalid clock skew allowance")
-		} else {
-			validity.ClockSkewAllowance = csa
-		}
-	}
-	if pbd := cfg.IdentityIssuanceLifeTime; pbd != "" {
-		il, err := time.ParseDuration(pbd)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Invalid issuance lifetime")
-		} else {
-			validity.Lifetime = il
-		}
 	}
 
 	// Create k8s API
@@ -110,8 +88,9 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to build cert-manager client")
 	}
 
+	csrSvc := csr.New(log, cfg.ControllerNS, cmCli, cfg.PreserveCrtReq, cfg.IssuerRef())
 	// Create, initialize and run service
-	svc := identity.NewService(log, k8sTokenValidator, &validity, cfg.ControllerNS, cmCli, cfg.PreserveCrtReq, cfg.IssuerRef())
+	svc := identity.New(log, k8sTokenValidator, csrSvc)
 
 	// Bind and serve
 	lis, err := net.Listen("tcp", cfg.Addr)
@@ -147,5 +126,6 @@ func initLogger(cfg config.Config) zerolog.Logger {
 		With().
 		Timestamp().
 		Logger().
+		Level(cfg.ZLLogLevel()).
 		Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "2006-01-02 15:04:05"})
 }
