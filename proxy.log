@@ -1,9 +1,0 @@
-[     0.001497s]  INFO ThreadId(01) linkerd2_proxy::rt: Using single-threaded proxy runtime
-[     0.001798s]  INFO ThreadId(01) linkerd2_proxy: Admin interface on 0.0.0.0:4191
-[     0.001805s]  INFO ThreadId(01) linkerd2_proxy: Inbound interface on 0.0.0.0:4143
-[     0.001807s]  INFO ThreadId(01) linkerd2_proxy: Outbound interface on 127.0.0.1:4140
-[     0.001808s]  INFO ThreadId(01) linkerd2_proxy: Tap DISABLED
-[     0.001810s]  INFO ThreadId(01) linkerd2_proxy: Local identity is linkerd-identity.linkerd.serviceaccount.identity.linkerd.cluster.local
-[     0.001812s]  INFO ThreadId(01) linkerd2_proxy: Identity verified via localhost:8080
-[     0.001814s]  INFO ThreadId(01) linkerd2_proxy: Destinations resolved via linkerd-dst-headless.linkerd.svc.cluster.local:8086 (linkerd-destination.linkerd.serviceaccount.identity.linkerd.cluster.local)
-[     0.024854s]  INFO ThreadId(02) daemon:identity: linkerd_app: Certified identity id=linkerd-identity.linkerd.serviceaccount.identity.linkerd.cluster.local
