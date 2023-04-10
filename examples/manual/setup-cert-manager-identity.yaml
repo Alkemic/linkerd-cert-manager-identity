@@ -1,0 +1,3 @@
+- op: replace
+  path: /spec/template/spec/containers/0/image
+  value: alkemic/linekrd-identity-cert-manager:v0.0.1.12
