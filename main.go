@@ -28,31 +28,9 @@ import (
 const componentName = "linkerd-identity"
 
 func main() {
-	//cmd := flag.NewFlagSet("identity", flag.ExitOnError)
-	//
-	//addr := cmd.String("addr", ":8080", "address to serve on")
-	//adminAddr := cmd.String("admin-addr", ":9990", "address of HTTP admin server")
-	//kubeConfigPath := cmd.String("kubeconfig", "", "path to kube config")
-	//controllerNS := cmd.String("controller-namespace", "", "namespace in which Linkerd is installed")
-	//cmd.String("identity-scheme", "", "scheme used for the identity issuer secret format")
-	//trustDomain := cmd.String("identity-trust-domain", "", "configures the name suffix used for identities")
-	//identityIssuanceLifeTime := cmd.String("identity-issuance-lifetime", "", "the amount of time for which the Identity issuer should certify identity")
-	//identityClockSkewAllowance := cmd.String("identity-clock-skew-allowance", "", "the amount of time to allow for clock skew within a Linkerd cluster")
-	//enablePprof := cmd.Bool("enable-pprof", false, "Enable pprof endpoints on the admin server")
-	//
-	//preserveCrtReq := cmd.Bool("preserve-csr-requests", false, "Do not remove CertificateRequests after csr is created")
-	//issuerName := cmd.String("issuer-name", "linkerd", "name of issuer")
-	//issuerKind := cmd.String("issuer-kind", "Issuer", "issuer kind, can be Issuer or ClusterIssuer")
-	//
-	////issuerName := cmd.String("identity-issuer-name", "linkerd-identity", "name of cert-manager's Issuer")
-	//
-	//traceCollector := flags.AddTraceFlags(cmd)
-	//
-	//flags.ConfigureAndParse(cmd, os.Args[2:])
-
-	cfg := config.Parse()
-
 	ready := false
+	cfg := config.Parse()
+	log := initLogger(cfg)
 	adminServer := admin.NewServer(cfg.AdminAddr, cfg.EnablePprof, &ready)
 	log.Info().Interface("cfg", cfg).Msg("mark")
 	go func() {
@@ -69,7 +47,6 @@ func main() {
 
 	dom, err := idctl.NewTrustDomain(cfg.ControllerNS, cfg.TrustDomain)
 	if err != nil {
-		//nolint:gocritic
 		log.Fatal().Err(err).Msg("Invalid trust domain")
 	}
 
@@ -135,10 +112,12 @@ func main() {
 	<-stop
 	log.Info().Str("addr", cfg.Addr).Msg("shutting down gRPC server")
 	srv.GracefulStop()
-	adminServer.Shutdown(ctx)
+	if err := adminServer.Shutdown(ctx); err != nil {
+		log.Err(err).Msg("server shutdown")
+	}
 }
 
-func initLogger(cfg config.Config) zerolog.Logger {
+func initLogger(cfg *config.Config) zerolog.Logger {
 	return zerolog.New(os.Stderr).
 		With().
 		Timestamp().

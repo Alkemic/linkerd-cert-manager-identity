@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"log"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -59,7 +60,9 @@ func Parse() *Config {
 	cmd.StringVar(&cfg.LogLevel, "log-level", zerolog.InfoLevel.String(), "log level, must be one of: panic, fatal, error, warn, info, debug")
 	cmd.StringVar(&cfg.logFormat, "log-format", "plain", "log format, must be one of: plain, json")
 
-	cmd.Parse(os.Args[2:])
+	if err := cmd.Parse(os.Args[2:]); err != nil {
+		log.Fatalln("parsing command line arguments:", err)
+	}
 
 	return cfg
 }
