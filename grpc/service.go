@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/Alkemic/linekrd-identity-cert-manager/csr"
+	"github.com/Alkemic/linekrd-cert-manager-identity/csr"
 )
 
 const (
