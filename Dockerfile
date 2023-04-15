@@ -13,7 +13,7 @@ WORKDIR /build
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH \
-    go build -o /out/controller -tags prod -mod=readonly -ldflags "-s -w" .
+    go build -o /out/controller -tags prod -mod=readonly -ldflags "-s -w" ./cmd/controller
 
 ## package runtime
 FROM scratch
