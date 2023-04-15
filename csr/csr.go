@@ -48,6 +48,7 @@ func (svc *service) SignCertificate(ctx context.Context, req SigningRequest) (Re
 	cr, err := svc.client.Create(ctx, req.ToCertManagerRequest(svc.issuerRef), metav1.CreateOptions{})
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create CertificateRequest")
+		certificatesCounter.WithLabelValues("cannot-create").Inc()
 		return Response{}, fmt.Errorf("failed to create CertificateRequest: %w", err)
 	}
 
@@ -71,6 +72,7 @@ func (svc *service) SignCertificate(ctx context.Context, req SigningRequest) (Re
 	signedCR, err := svc.waitForCertificateRequest(ctx, log, cr)
 	if err != nil {
 		log.Error().Str("namespace", cr.Namespace).Str("name", cr.Name).Err(err).Msg("failed to wait for CertificateRequest")
+		certificatesCounter.WithLabelValues("failed-wait").Inc()
 		return Response{}, fmt.Errorf("failed to wait for CertificateRequest %s/%s to be signed: %w",
 			cr.Namespace, cr.Name, err)
 	}
@@ -78,9 +80,11 @@ func (svc *service) SignCertificate(ctx context.Context, req SigningRequest) (Re
 	certificate, err := svc.unpackCertificate(signedCR.Status.Certificate)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to decode csr chain returned from issuer")
+		certificatesCounter.WithLabelValues("cannot-decode").Inc()
 		return Response{}, fmt.Errorf("failed to decode csr chain returned from issuer: %w", err)
 	}
 
+	certificatesCounter.WithLabelValues("success").Inc()
 	return Response{
 		Certificate:  certificate.Raw,
 		Intermediate: [][]byte{signedCR.Status.CA},
