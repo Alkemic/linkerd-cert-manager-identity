@@ -1,13 +1,16 @@
 package csr
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+)
 
 var (
-	certificatesCounter = prometheus.NewCounterVec(
+	certificatesCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "sign_certificates_count",
-			Help: "No. of certificates issued",
+			Help: "No. of certificates issued with reason and identity name",
 		},
-		[]string{"reason"},
+		[]string{"reason", "identity"},
 	)
 )
