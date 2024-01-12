@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"time"
 
 	apiutil "github.com/cert-manager/cert-manager/pkg/api/util"
 	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -28,15 +29,17 @@ type service struct {
 
 	preserveCertificateRequests bool
 	issuerRef                   cmmeta.ObjectReference
+	issuanceLifeTime            time.Duration
 
 	client cmclient.CertificateRequestInterface
 }
 
-func New(log zerolog.Logger, issuerNamespace string, cmCli *cmversioned.Clientset, preserveCrtReq bool, issuerRef cmmeta.ObjectReference) *service {
+func New(log zerolog.Logger, issuerNamespace string, cmCli *cmversioned.Clientset, preserveCrtReq bool, issuerRef cmmeta.ObjectReference, issuanceLifeTime time.Duration) *service {
 	return &service{
 		log:                         log,
 		preserveCertificateRequests: preserveCrtReq,
 		issuerRef:                   issuerRef,
+		issuanceLifeTime:            issuanceLifeTime,
 		client:                      cmCli.CertmanagerV1().CertificateRequests(issuerNamespace),
 	}
 }
@@ -45,7 +48,7 @@ func (svc *service) SignCertificate(ctx context.Context, req SigningRequest) (Re
 	log := svc.log.With().Str("svc", "csr").Str("identity", req.Identity).Logger()
 
 	// Create CertificateRequest and wait for it to be successfully signed.
-	cr, err := svc.client.Create(ctx, req.ToCertManagerRequest(svc.issuerRef), metav1.CreateOptions{})
+	cr, err := svc.client.Create(ctx, req.ToCertManagerRequest(svc.issuerRef, svc.issuanceLifeTime), metav1.CreateOptions{})
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create CertificateRequest")
 		certificatesCounter.WithLabelValues("cannot-create").Inc()

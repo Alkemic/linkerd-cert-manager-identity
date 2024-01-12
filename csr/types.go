@@ -18,7 +18,7 @@ type SigningRequest struct {
 	Identity string
 }
 
-func (r SigningRequest) ToCertManagerRequest(issuerRef cmmeta.ObjectReference) *cmapi.CertificateRequest {
+func (r SigningRequest) ToCertManagerRequest(issuerRef cmmeta.ObjectReference, duration time.Duration) *cmapi.CertificateRequest {
 	return &cmapi.CertificateRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "linkerd-csr-",
@@ -28,7 +28,7 @@ func (r SigningRequest) ToCertManagerRequest(issuerRef cmmeta.ObjectReference) *
 		},
 		Spec: cmapi.CertificateRequestSpec{
 			Duration: &metav1.Duration{
-				Duration: 36 * time.Hour,
+				Duration: duration,
 			},
 			IsCA: false,
 			Request: pem.EncodeToMemory(&pem.Block{

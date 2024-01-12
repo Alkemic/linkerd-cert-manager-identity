@@ -83,7 +83,7 @@ func main() {
 		recorder.Event(parent, eventType, reason, message)
 	}
 
-	csrSvc := csr.New(log, cfg.ControllerNS, cmCli, cfg.PreserveCrtReq, cfg.IssuerRef())
+	csrSvc := csr.New(log, cfg.ControllerNS, cmCli, cfg.PreserveCrtReq, cfg.IssuerRef(), cfg.IdentityIssuanceLifeTime)
 	svc := grpc.New(log, k8sTokenValidator, recordEventFunc, csrSvc)
 
 	// Bind and serve

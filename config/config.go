@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
 
 	"github.com/rs/zerolog"
 
@@ -17,7 +18,7 @@ type Config struct {
 	ControllerNS               string
 	identityScheme             string // not used
 	TrustDomain                string
-	identityIssuanceLifeTime   string // not used
+	IdentityIssuanceLifeTime   time.Duration
 	identityClockSkewAllowance string // not used
 	EnablePprof                bool
 	TraceCollector             string
@@ -44,7 +45,7 @@ func Parse() *Config {
 	cmd.StringVar(&cfg.ControllerNS, "controller-namespace", "", "namespace in which Linkerd is installed")
 	cmd.StringVar(&cfg.identityScheme, "identity-scheme", "", "scheme used for the identity issuer secret format")
 	cmd.StringVar(&cfg.TrustDomain, "identity-trust-domain", "", "configures the name suffix used for identities")
-	cmd.StringVar(&cfg.identityIssuanceLifeTime, "identity-issuance-lifetime", "", "the amount of time for which the Identity issuer should certify identity")
+	cmd.DurationVar(&cfg.IdentityIssuanceLifeTime, "identity-issuance-lifetime", 36*time.Hour, "the amount of time for which the Identity issuer should certify identity")
 	cmd.StringVar(&cfg.identityClockSkewAllowance, "identity-clock-skew-allowance", "", "the amount of time to allow for clock skew within a Linkerd cluster")
 	cmd.BoolVar(&cfg.EnablePprof, "enable-pprof", false, "Enable pprof endpoints on the admin server")
 	cmd.StringVar(&cfg.TraceCollector, "trace-collector", "", "Enables OC Tracing with the specified endpoint as collector")

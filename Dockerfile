@@ -1,7 +1,7 @@
 ARG BUILDPLATFORM=linux/amd64
 
 # Precompile key slow-to-build dependencies
-FROM --platform=$BUILDPLATFORM golang:1.20 as go-deps
+FROM --platform=$BUILDPLATFORM golang:1.21.6 as go-deps
 WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
