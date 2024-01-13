@@ -32,6 +32,11 @@ type Config struct {
 	logFormat string // not used
 
 	PrintVersion bool
+
+	KubeApiClient struct {
+		QPS   float64
+		Burst int
+	}
 }
 
 func Parse() *Config {
@@ -60,6 +65,9 @@ func Parse() *Config {
 
 	cmd.StringVar(&cfg.LogLevel, "log-level", zerolog.InfoLevel.String(), "log level, must be one of: panic, fatal, error, warn, info, debug")
 	cmd.StringVar(&cfg.logFormat, "log-format", "plain", "log format, must be one of: plain, json")
+
+	cmd.Float64Var(&cfg.KubeApiClient.QPS, "kube-apiclient-qps", 100, "Maximum QPS sent to the kube-apiserver before throttling")
+	cmd.IntVar(&cfg.KubeApiClient.Burst, "kube-apiclient-burst", 200, "Burst value over kube-apiclient-qps")
 
 	if err := cmd.Parse(os.Args[2:]); err != nil {
 		log.Fatalln("parsing command line arguments:", err)

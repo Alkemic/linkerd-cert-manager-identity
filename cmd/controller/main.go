@@ -51,10 +51,16 @@ func main() {
 	}
 
 	// Create k8s API
-	k8sAPI, err := k8s.NewAPI(cfg.KubeConfigPath, "", "", []string{}, 0)
+	config, err := k8s.GetConfig(cfg.KubeConfigPath, "")
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load kubeconfig")
+		log.Fatal().Err(err).Msg("configuring Kubernetes API client")
 	}
+	k8sAPI, err := k8s.NewAPIForConfig(config, "", []string{}, 0, float32(cfg.KubeApiClient.QPS), cfg.KubeApiClient.Burst)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to load kubeconfig")
+	}
+	log.Info().Msgf("Using k8s client with QPS=%.2f Burst=%d", config.QPS, config.Burst)
+
 	k8sTokenValidator, err := idctl.NewK8sTokenValidator(ctx, k8sAPI, dom)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize identity service")
