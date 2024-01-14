@@ -1,10 +1,12 @@
 #!/bin/bash -eu
 
+cert_manger_version=v1.13.3
+
 kind delete cluster --name linkerd || true
 kind create cluster --name linkerd
 
 # install cert-manager
-kubectl apply --wait -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+kubectl apply --wait -f "https://github.com/cert-manager/cert-manager/releases/download/${cert_manger_version}/cert-manager.yaml"
 kubectl wait --namespace cert-manager --for condition=Available=True --timeout 120s \
   deployment cert-manager-webhook
 
