@@ -20,9 +20,9 @@ import (
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/Alkemic/linekrd-cert-manager-identity/config"
-	"github.com/Alkemic/linekrd-cert-manager-identity/csr"
-	"github.com/Alkemic/linekrd-cert-manager-identity/grpc"
+	"github.com/Alkemic/linkerd-cert-manager-identity/config"
+	"github.com/Alkemic/linkerd-cert-manager-identity/csr"
+	"github.com/Alkemic/linkerd-cert-manager-identity/grpc"
 )
 
 const componentName = "linkerd-identity"

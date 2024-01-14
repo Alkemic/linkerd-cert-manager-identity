@@ -1,4 +1,4 @@
-module github.com/Alkemic/linekrd-cert-manager-identity
+module github.com/Alkemic/linkerd-cert-manager-identity
 
 go 1.21
 

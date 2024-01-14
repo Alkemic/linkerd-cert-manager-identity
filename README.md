@@ -88,7 +88,7 @@ spec:
 Trust anchor must be extracted from secrets (`root-secret` in this case) and stored in configmap 
 `linkerd-identity-trust-roots` under `ca-bundle.crt` key, in LinkerD's namespace, then during installation you must
 inform that you are using external certificate authority. Last step is to patch identity controller `Deployment` to use 
-[alkemic/linekrd-cert-manager-identity](https://hub.docker.com/r/alkemic/linekrd-cert-manager-identity) image
+[alkemic/linkerd-cert-manager-identity](https://hub.docker.com/r/alkemic/linkerd-cert-manager-identity) image
 and add argument `--issuer-name=linkerd` to specify which `Issuer` should be used.
 
 ### Vault
